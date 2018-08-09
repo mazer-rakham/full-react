@@ -9,7 +9,8 @@ passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 passport.deserializeUser((id, done) => {
-  User.findById(id).then(user => { // go into the databse, find the User with the id then assign that to user and desealize
+  User.findById(id).then(user => {
+    // go into the databse, find the User with the id then assign that to user and desealize
     done(null, user);
   });
 });
@@ -22,21 +23,18 @@ passport.use(
       callbackURL: "/auth/google/callback",
       proxy: true
     },
-    (accessToken, refreshToken, profile, done) => {
-      User.findOne({ googleId: profile.id }).then(existingUser => {
-        if (existingUser) {
-          // already have a record
-          done(null, existingUser);
-        } else {
-          // no user record
-          new User({
-            //this creates a new model instance
-            googleId: profile.id
-          })
-            .save()
-            .then(user => done(null, user)); // this is making a second instance in the promise and saying it is done saving
-        }
-      });
+    async (accessToken, refreshToken, profile, done) => {
+      const existingUser = await User.findOne({ googleId: profile.id });
+      if (existingUser) {
+        // already have a record
+        return done(null, existingUser);
+      }
+      // no user record
+      const user = await new User({
+        //this creates a new model instance
+        googleId: profile.id
+      }).save();
+      done(null, user); // this is making a second instance in the promise and saying it is done saving
     }
   )
 );
